@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スタッフデータ インポート</title>
+<style>
+body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#0F1612}
+.box{background:#fff;border-radius:16px;padding:2.5rem 2rem;max-width:420px;width:100%;text-align:center}
+.logo{font-size:20px;font-weight:900;color:#1A7A56;margin-bottom:6px}
+.sub{font-size:13px;color:#7A8C81;margin-bottom:1.5rem}
+.staff-list{text-align:left;background:#F5F3EE;border-radius:10px;padding:1rem;margin-bottom:1.5rem;max-height:260px;overflow-y:auto}
+.staff-item{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #EAE8E2;font-size:13px}
+.staff-item:last-child{border-bottom:none}
+.staff-name{font-weight:700;color:#0F1612}
+.staff-store{font-size:11px;color:#7A8C81;margin-top:2px}
+.staff-wage{font-weight:700;color:#1A7A56;font-family:monospace}
+.btn{width:100%;padding:13px;border-radius:8px;border:none;background:#1A7A56;color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:background .15s}
+.btn:hover{background:#0F5038}
+.btn:disabled{background:#9FE1CB;cursor:not-allowed}
+.result{margin-top:1rem;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:700;display:none}
+.result.ok{background:#D4EDDF;color:#085041}
+.result.err{background:#F8E8E8;color:#A02828}
+.count{display:inline-block;background:#1A7A56;color:#fff;border-radius:20px;font-size:12px;font-weight:700;padding:2px 10px;margin-left:6px}
+.store-k{background:#E0ECFB;color:#185FA5;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px}
+.store-r{background:#F8E8E8;color:#A02828;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">スタッフデータ インポート</div>
+  <div class="sub">以下のスタッフ情報をアプリに読み込みます<span class="count" id="count-badge">11名</span></div>
+
+  <div class="staff-list" id="staff-list"></div>
+
+  <button class="btn" id="import-btn" onclick="doImport()">このブラウザにインポートする</button>
+  <div class="result" id="result"></div>
+</div>
+
+<script>
+const DATA = {"staffList":[{"name":"篠崎　夏","wage":1200,"store":"木屋町御池個室店","id":1777521655234},{"name":"鈴木　優衣","wage":1150,"store":"木屋町御池個室店","id":1777521670895},{"name":"柳田　美和","wage":1150,"store":"木屋町御池個室店","id":1777521696630},{"name":"陳 毅龍","wage":1130,"store":"木屋町御池個室店","id":1777521835319},{"name":"小出　芽衣","wage":1150,"store":"木屋町御池個室店","id":1777521851205},{"name":"寺林　里桜","wage":1150,"store":"木屋町御池個室店","id":1777521873266},{"name":"木村　真緒","wage":1150,"store":"烏丸三条個室店","id":1777521887868},{"name":"渡部　璃久","wage":1150,"store":"烏丸三条個室店","id":1777521899319},{"name":"東谷　あみ","wage":1150,"store":"烏丸三条個室店","id":1777521909510},{"name":"河合　美空","wage":1150,"store":"烏丸三条個室店","id":1777522012809},{"name":"小又　麻莉紗","wage":1150,"store":"烏丸三条個室店","id":1777522069067}],"records":[]};
+
+// リスト表示
+const listEl = document.getElementById('staff-list');
+DATA.staffList.forEach(s => {
+  const isK = s.store === '木屋町御池個室店';
+  listEl.innerHTML += `
+    <div class="staff-item">
+      <div>
+        <div class="staff-name">${s.name}</div>
+        <div class="staff-store"><span class="${isK?'store-k':'store-r'}">${isK?'木屋町':'烏丸'}</span></div>
+      </div>
+      <div class="staff-wage">¥${s.wage.toLocaleString()}/h</div>
+    </div>`;
+});
+document.getElementById('count-badge').textContent = DATA.staffList.length + '名';
+
+function doImport() {
+  const btn = document.getElementById('import-btn');
+  const res = document.getElementById('result');
+  try {
+    // 既存データを確認して統合（重複はidで判断）
+    const existing = JSON.parse(localStorage.getItem('sl3') || '[]');
+    const existingIds = new Set(existing.map(s => s.id));
+    const newStaff = DATA.staffList.filter(s => !existingIds.has(s.id));
+    const merged = [...existing, ...newStaff];
+    localStorage.setItem('sl3', JSON.stringify(merged));
+
+    btn.disabled = true;
+    btn.textContent = '✅ インポート完了！';
+    res.style.display = 'block';
+    res.className = 'result ok';
+    res.innerHTML = `${merged.length}名のスタッフを登録しました。<br>このタブを閉じてアプリを開いてください。`;
+  } catch(e) {
+    res.style.display = 'block';
+    res.className = 'result err';
+    res.textContent = 'エラーが発生しました：' + e.message;
+  }
+}
+</script>
+</body>
+</html>
